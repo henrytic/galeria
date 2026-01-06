@@ -1,8 +1,10 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 flask
+torch
+torchvision
 facenet-pytorch
 scikit-learn
 numpy
 pillow
-torch
-torchvision
 werkzeug
