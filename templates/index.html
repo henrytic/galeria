@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Cluster AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <!-- Note: FontAwesome kit might need a real key or CDN, using placeholder/generic CDN if needed for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-project-diagram"></i>
+                <span>FaceCluster</span>
+            </div>
+            <nav>
+                <button class="nav-btn active" data-tab="upload" onclick="switchTab('upload')">
+                    <i class="fas fa-upload"></i> Subir
+                </button>
+                <button class="nav-btn" data-tab="gallery" onclick="switchTab('gallery')">
+                    <i class="fas fa-images"></i> Galería
+                </button>
+                <button class="nav-btn" data-tab="people" onclick="switchTab('people')">
+                    <i class="fas fa-users"></i> Personas
+                </button>
+                <button class="nav-btn" data-tab="metrics" onclick="switchTab('metrics')">
+                    <i class="fas fa-chart-bar"></i> Métricas
+                </button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section id="upload-section" class="tab-content active">
+                <div class="upload-area" id="drop-zone">
+                    <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                    <h2>Arrastra tus fotos aquí</h2>
+                    <p>O haz clic para seleccionar</p>
+                    <input type="file" id="file-input" multiple accept="image/*" hidden>
+                    <button class="primary-btn" onclick="document.getElementById('file-input').click()">Seleccionar
+                        Archivos</button>
+                </div>
+                <div class="processing-status" id="processing-status" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Procesando imágenes y agrupando rostros...</p>
+                </div>
+            </section>
+
+            <!-- Gallery Section -->
+            <section id="gallery-section" class="tab-content">
+                <div class="header-row">
+                    <h2>Todas las Fotos</h2>
+                    <span class="count-badge" id="gallery-count">0</span>
+                </div>
+                <div class="grid-gallery" id="gallery-grid">
+                    <!-- Images will be injected here -->
+                </div>
+            </section>
+
+            <!-- People Section -->
+            <section id="people-section" class="tab-content">
+                <div class="header-row">
+                    <h2>Personas Detectadas</h2>
+                    <span class="count-badge" id="people-count">0</span>
+                </div>
+                <div class="grid-people" id="people-grid">
+                    <!-- People cards will be injected here -->
+                </div>
+            </section>
+
+            <!-- Metrics Section -->
+            <section id="metrics-section" class="tab-content">
+                <div class="header-row">
+                    <h2>Métricas del Modelo</h2>
+                </div>
+                <div class="grid-metrics">
+                    <div class="metric-card">
+                        <i class="fas fa-id-badge"></i>
+                        <h3>Rostros Detectados</h3>
+                        <p id="m-total-faces">0</p>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-users"></i>
+                        <h3>Personas Únicas</h3>
+                        <p id="m-total-people">0</p>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>Rostros Desconocidos</h3>
+                        <p id="m-noise">0</p>
+                        <small>(Agrupados como ruido)</small>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Silueta (Silhouette)</h3>
+                        <p id="m-silhouette">0</p>
+                        <small>[-1 a 1] Mayor es mejor</small>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-arrows-alt"></i>
+                        <h3>Davies-Bouldin</h3>
+                        <p id="m-db">0</p>
+                        <small>Menor es mejor</small>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-project-diagram"></i>
+                        <h3>Calinski-Harabasz</h3>
+                        <p id="m-ch">0</p>
+                        <small>Mayor es mejor</small>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Confianza Promedio</h3>
+                        <p id="m-confidence">0%</p>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h2>Visualización 2D (PCA)</h2>
+                    <div id="cluster-plot" style="width:100%; height:500px;"></div>
+                </div>
+            </section>
+
+            <!-- Person Detail View (Modal/Overlay) -->
+            <div id="person-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-btn" onclick="closeModal()">&times;</span>
+                    <div class="modal-header">
+                        <h2 id="modal-person-name">Fotos de esta persona</h2>
+                        <div class="rename-container">
+                            <input type="text" id="rename-input" placeholder="Nombre...">
+                            <button class="primary-btn sm" onclick="saveName()">Guardar Nombre</button>
+                        </div>
+                    </div>
+                    <div class="grid-gallery" id="person-gallery-grid">
+                        <!-- Imgs -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>

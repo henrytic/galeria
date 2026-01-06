@@ -1,0 +1,8 @@
+flask
+facenet-pytorch
+scikit-learn
+numpy
+pillow
+torch
+torchvision
+werkzeug
